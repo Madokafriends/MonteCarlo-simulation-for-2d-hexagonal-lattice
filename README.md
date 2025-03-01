@@ -1,4 +1,5 @@
 # Monte Carlo Simulation for 2D Hexagonal Lattice Ising Model
+## this introduction is produced by grok3， and the program is in fact still developing
 
 ## Overview
 Welcome to the Monte Carlo simulation of the Ising model on a 2D hexagonal lattice! This project is hosted on the `develop` branch, where active development and experimentation take place. The Ising model is a classic statistical physics model used to study magnetic properties, with spins of +1 or -1 assigned to lattice sites. This simulation explores how the system evolves at different temperatures, visualized through images and animations.
@@ -14,8 +15,7 @@ Welcome to the Monte Carlo simulation of the Ising model on a 2D hexagonal latti
 - **`Lattice.py`**: Defines the `Lattice` and `HexLattice` classes for lattice setup and simulation logic.
 - **`Particle.py`**: Implements the `Particle` class for individual spins on the lattice.
 - **`main.py`**: Runs the simulation for specified temperatures, saving images and GIFs.
-- **`figure_v/`**: Stores PNG images of spin configurations for each temperature.
-- **`gif_v/`**: Contains animated GIFs showing the simulation progress.
+
 
 ## Requirements
 To run this project, you’ll need:
