@@ -74,7 +74,7 @@ class Lattice(ABC):
                 # interaction energy with local energy
                 for neighbor in self.get_neighbors(i, j):
                     E -= 0.5 * spin * self.lattice[neighbor].spin
-        return abs(E)  # total energy
+        return E  # total energy
 
 
     def monte_carlo_step(self):
