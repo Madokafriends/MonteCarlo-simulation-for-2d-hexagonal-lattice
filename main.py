@@ -8,10 +8,10 @@ from Particle import Particle
 
 # 参数设置
 L = 30  # 晶格大小
-temperatures = [0.5, 1.0, 2.0, 3.0, 4.0, 10.0]  # 不同温度
+temperatures = [1.0, 2.0, 3.0, 3.5, 4.0, 10.0]  # 不同温度
 steps_per_temp = 2000  # 每个温度的蒙特卡洛步数
 frames_per_temp = 48  # 每个温度保存的帧数
-steps=1000 #统计数据对应的montecarlo步数
+steps=4000 #统计数据对应的montecarlo步数
 
 def process_temperature(T):
     # 处理指定温度的模拟
@@ -20,6 +20,7 @@ def process_temperature(T):
     for _ in range(steps_per_temp):
         lattice.monte_carlo_step()
     # 创建图像文件夹
+    # please change the true address here
     fig_folder = os.path.join('figure_v', f'T_{T}')
     os.makedirs(fig_folder, exist_ok=True)
     # 保存最后24个状态的图像
@@ -36,14 +37,15 @@ def process_temperature(T):
             lattice.generate_image(frame, fig_folder,xcondit,ycondit,colors,diameter=60)
             images.append(os.path.join(fig_folder, f"T_{T}_frame_{frame}.png"))
     # 生成GIF
+    # please change the true address here
     gif_path = os.path.join('gif_v', f'T_{T}.gif')
     with imageio.get_writer(gif_path, mode='I', duration=0.5) as writer:
         for img in images:
             writer.append_data(imageio.imread(img))
 
 def MonCa_statistic_calculate(T):
+    print("calculating temperature T {}".format(T))
     lattice2 = HexLattice(L, T)
-    steps=5000
     magnetizations = np.zeros(steps) # 存放每帧的磁化
     energies = np.zeros(steps)      # 存放每帧的能量
     
@@ -122,7 +124,7 @@ def plot_and_save_results(results, save_path="monte_carlo_results.png"):
 
 def main():
     
-    # 创建输出目录
+    # 创建输出目录 please change the true address here
     os.makedirs('figure_v', exist_ok=True)
     os.makedirs('gif_v', exist_ok=True)
     # 使用多线程并行处理不同温度
@@ -130,9 +132,9 @@ def main():
         executor.map(process_temperature, temperatures)
     
     
-    T=np.linspace(1,6,80) #计算统计时的温度
+    T_array=np.linspace(1,6,80) #计算统计时的温度
     with ThreadPoolExecutor() as executor:
-            results = list(executor.map(MonCa_statistic_calculate, T))
+            results = list(executor.map(MonCa_statistic_calculate, T_array))
     plot_and_save_results(results)
     # 统计和计算
     

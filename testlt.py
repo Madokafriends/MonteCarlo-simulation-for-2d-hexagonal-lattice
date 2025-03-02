@@ -39,7 +39,7 @@ def MonCa_statistic_calculate(T):
     return (T, M_avg, E_avg, Cv, Cm)
 
 if __name__ == '__main__':
-    
+    os.makedirs('figure_v', exist_ok=True)
     # fig_folder = os.path.join('figure_v', f'T_{0.5}')
     # os.makedirs(fig_folder, exist_ok=True)
     # latticehex = HexLattice(L, 0.5)
