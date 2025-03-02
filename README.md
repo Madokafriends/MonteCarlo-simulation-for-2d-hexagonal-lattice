@@ -69,9 +69,9 @@ pip install numpy matplotlib imageio
 ```
 
 ### Output
-Statistical Plots: A single PNG file (monte_carlo_results.png) with four subplots
-Gif: Stored in gif_v (e.g., T_2.0.gif), showing spin evolution at some temperature
-Fig: each figure for gif is also tracked in a figure_v folder.
+- Statistical Plots: A single PNG file (monte_carlo_results.png) with four subplots
+- Gif: Stored in gif_v (e.g., T_2.0.gif), showing spin evolution at some temperature
+- Fig: each figure for gif is also tracked in a figure_v folder.
 
 ---
 ## Notes
