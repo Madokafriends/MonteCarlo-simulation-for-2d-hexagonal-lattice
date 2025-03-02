@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Ising Model Monte Carlo Simulation on a Hexagonal Lattice
 
 This document introduces a Python-based Monte Carlo simulation of the [Ising model](https://en.wikipedia.org/wiki/Ising_model) implemented on a hexagonal lattice. The Ising model is a fundamental mathematical model in statistical mechanics used to study magnetic properties and phase transitions in ferromagnetic systems. This simulation explores the behavior of spins on a hexagonal lattice under varying temperatures, providing both visualizations and statistical analyses.
@@ -76,4 +77,5 @@ Fig: each figure for gif is also tracked in a figure_v folder.
 ---
 ## Notes
 This simulation offers an accessible way to explore the Ising model's behavior on a hexagonal lattice, making it a valuable tool for studying phase transitions and statistical mechanics computationally. Feel free to adapt the code for further experimentation!
+
 

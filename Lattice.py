@@ -11,6 +11,7 @@ from collections import deque
 
 class Lattice(ABC):
     def __init__(self, L, T):
+
         self.L = L  # Lattice size
         self.T = T  # temperature
         self.lattice = self.initialize_lattice()
@@ -36,7 +37,6 @@ class Lattice(ABC):
         queue = deque([(i, j, 0)])  # use quene to save the points
         visited = set([(i, j)])     # record those saved points
         neighbors = []              # store the message of neighbors
-
         while queue:
             x, y, d = queue.popleft()
             if d == n:
@@ -56,7 +56,7 @@ class Lattice(ABC):
         neighbors = self.get_neighbors(i, j)
         neighbor_spins = sum(self.lattice[n].spin for n in neighbors)
         return 2 * particle.spin * neighbor_spins
-    
+
     def calc_total_magnetization(self):
         """calculate total magnetization"""
         total = 0
@@ -85,7 +85,6 @@ class Lattice(ABC):
                 if dE < 0 or random.random() < np.exp(-dE / self.T):
                     self.lattice[i, j].flip()
 
-
     @abstractmethod
     def generate_image(self, frame, folder):
         pass
@@ -103,13 +102,14 @@ class HexLattice(Lattice):
                 ((i-1) % self.L, (j-1) % self.L), ((i-1) % self.L, (j+1) % self.L)
             ]
         else:  # odd
+
             neighbors = [
                 ((i-1) % self.L, j), ((i+1) % self.L, j),
                 (i, (j-1) % self.L), (i, (j+1) % self.L),
                 ((i+1) % self.L, (j-1) % self.L), ((i+1) % self.L, (j+1) % self.L)
             ]
         return neighbors
-    
+
     def set_position(self, transform_factor=0.5):
         x_area = np.zeros(self.L**2)
         y_area = np.zeros(self.L**2)
