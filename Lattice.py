@@ -63,7 +63,7 @@ class Lattice(ABC):
         for i in range(self.L):
             for j in range(self.L):
                 total += self.lattice[i, j].spin
-        return total  # 总磁化，可除以 L*L 得到单位磁化
+        return abs(total)  # 总磁化，可除以 L*L 得到单位磁化
 
     def calc_total_energy(self):
         """计算晶格总能量，采用双重循环，每个键只计算一次（用0.5因子避免双计）"""
@@ -74,7 +74,7 @@ class Lattice(ABC):
                 # 累加当前点与其所有最近邻的相互作用能
                 for neighbor in self.get_neighbors(i, j):
                     E -= 0.5 * spin * self.lattice[neighbor].spin
-        return E  # 总能量
+        return abs(E)  # 总能量
 
 
     def monte_carlo_step(self):
@@ -123,6 +123,8 @@ class HexLattice(Lattice):
                 y_area[index] = i
                 if self.lattice[i][j].spin==1:
                     color[index]=1
+                else:
+                    color[index]=-1
         return (x_area, y_area,color)
 
     def generate_image(self, frame, folder,x_area,y_area,colors,diameter=50):
@@ -142,7 +144,11 @@ class HexLattice(Lattice):
     
     
         # 根据当前晶格状态生成颜色
-        colors_s = ['black' if spin == 1 else 'white'
+        if np.sum(colors)>=0:
+            colors_s = ['black' if spin == -1 else 'white'
+                  for spin in colors]
+        else:
+            colors_s = ['black' if spin == 1 else 'white'
                   for spin in colors]
         
         # 绘制散点图
