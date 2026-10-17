@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Interactive Metropolis simulation of the two-dimensional ferromagnetic Ising model on hexagonal Bravais and square lattices.">
+<title>Ising Model Simulation</title>
+<link rel="stylesheet" href="style.css?v=20261017-hexagonal">
+<script src="model.js?v=20261017-hexagonal" defer></script><script src="thermo.js?v=20261017-hexagonal" defer></script><script src="paths.js?v=20261017-hexagonal" defer></script><script src="presentation.js" defer></script><script src="plots.js?v=20261017-hexagonal" defer></script><script src="app.js?v=20261017-hexagonal" defer></script>
+</head>
+<body>
+<a class="skip" href="#laboratory">Skip to simulation</a>
+<header><a class="brand" href="#top">Ising Model Simulation</a><span class="header-note">Computational Statistical Mechanics</span><a class="source" href="https://github.com/Madokafriends/MonteCarlo-simulation-for-2d-hexagonal-lattice" target="_blank" rel="noreferrer">GitHub ↗</a></header>
+<main id="top">
+<div class="intro"><div><h1>Interactive Ising Simulation</h1><p class="lede">Explore thermal fluctuations, collective ordering, and field-induced spin alignment in the two-dimensional Ising model.</p></div><div class="model-stamp">Ferromagnetic Ising model<strong id="modelGeometry">Hexagonal Bravais lattice · 6 neighbours</strong><span>J = k<sub>B</sub> = 1 · Periodic boundaries</span></div></div>
+<nav class="scenarios" aria-label="Initial thermodynamic regimes">
+<button data-preset="cold"><span class="scenario-art cold" aria-hidden="true"></span><span><b>01 &nbsp; Ordered phase</b><small>T = 1.50 · h = 0</small></span><span class="arrow">↗</span></button>
+<button data-preset="critical" class="active"><span class="scenario-art critical" aria-hidden="true"></span><span><b>02 &nbsp; Critical fluctuations</b><small id="criticalPresetTemp">T ≈ 3.641 · h = 0</small></span><span class="arrow">↗</span></button>
+<button data-preset="hot"><span class="scenario-art hot" aria-hidden="true"></span><span><b>03 &nbsp; Disordered phase</b><small>T = 7.00 · h = 0</small></span><span class="arrow">↗</span></button>
+</nav>
+
+<section class="laboratory" id="laboratory" aria-label="Ising simulation">
+<div class="lattice-panel">
+<div class="stage-toolbar"><div class="segmented" aria-label="Lattice representation"><button data-view="domains" aria-pressed="true">Domains</button><button data-view="spins" aria-pressed="false">Spins</button><button data-view="walls" aria-pressed="false">Domain walls</button></div><div class="zoom-controls"><span>Zoom</span><button data-zoom="1" aria-pressed="true">1×</button><button data-zoom="2" aria-pressed="false">2×</button><button data-zoom="4" aria-pressed="false">4×</button><button data-zoom="8" aria-pressed="false">8×</button></div></div>
+<div class="spin-transport" id="spinTransport" role="group" aria-label="Monte Carlo step controls"><button id="spinStep">Single step</button><span id="stepDescription">Metropolis · One sweep per step</span></div>
+<div class="lattice-wrap"><canvas id="lattice" tabindex="0" role="img" aria-label="Hexagonal Bravais lattice spin configuration. Click to select a site, use arrow keys to select neighbours, or drag to pan when magnified."></canvas><div class="stage-badge" id="stageBadge">Current configuration</div><div class="spin-key"><span class="up">↑ +1</span><span class="down">↓ −1</span></div><span class="field-indicator" id="fieldIndicator"></span></div>
+<div class="stage-caption"><span id="viewHint" hidden></span><span id="sizeLabel">64 × 64</span></div>
+<div class="metrics"><div><span>Magnetization m</span><strong id="magnetization">—</strong><small id="absoluteM">|m| —</small></div><div><span>Energy E / NJ</span><strong id="energy">—</strong><small>Including field energy</small></div><div><span>Antialigned bonds</span><strong id="walls">—</strong><small>Fraction of all bonds</small></div><div><span>MC sweeps</span><strong id="sweeps">—</strong><small id="workUnits">Metropolis</small></div></div>
+</div>
+<aside class="control-panel">
+<div class="control-heading"><span class="eyebrow">Simulation parameters</span><span class="live-status" id="runStatus">Paused</span></div>
+<div class="geometry-control"><label for="latticeType">Lattice geometry</label><select id="latticeType" title="Retain T, h and spins; pause and start a new sampling segment."><option value="triangular" selected>Hexagonal Bravais · 6 neighbours</option><option value="square">Square · 4 neighbours</option></select></div>
+<div class="control-block"><div class="control-label"><label for="temperature">Temperature <span>k<sub>B</sub>T / J</span></label><input id="tempNumber" aria-label="Temperature value" type="number" min="0" max="8" step=".001" value="3.641"></div><input id="temperature" type="range" min="0" max="8" step=".01" value="3.64"><div class="ruler"><span>0</span><button id="criticalTemp">T<sub>c</sub> = <span id="criticalValue">3.641</span></button><span>8</span></div></div>
+<div class="control-block"><div class="control-label"><label for="field">Magnetic field <span>h = μB / J</span></label><input id="fieldNumber" aria-label="Magnetic field value" type="number" min="-2" max="2" step=".01" value="0"></div><input id="field" type="range" min="-2" max="2" step=".01" value="0"><div class="ruler"><span class="down">−2 · ↓</span><button id="zeroField">Zero field</button><span class="up">+2 · ↑</span></div></div>
+<div class="transport"><button class="primary" id="play" aria-pressed="false">▶ Run</button><button id="step">Single step</button></div>
+<div class="control-row sampling-controls"><div class="sampler-label"><span>Sampling method</span><strong>Metropolis</strong></div><label>Rate<select id="speed" title="Sampling rate and spin-flip replay duration"><option value="slow">Slow</option><option value="normal" selected>Normal</option><option value="fast">Fast</option></select></label></div>
+<div class="initial-label">Initial configuration <span>Retain T and h</span></div>
+<div class="initials"><button data-initial="up">All ↑</button><button data-initial="down">All ↓</button><button data-initial="random">Random</button><button data-initial="split">Two domains</button></div>
+<div class="control-row settings"><label>Lattice size<select id="size"><option value="32">32 × 32</option><option value="64" selected>64 × 64</option><option value="128">128 × 128</option><option value="256">256 × 256</option></select></label><label>Random seed<input id="seed" type="number" min="0" max="4294967295" step="1" value="42"></label></div>
+<div class="regime"><span id="regimeTag">Critical regime</span><h2 id="regimeTitle">Correlations across length scales</h2><p id="regimeText"></p></div>
+</aside>
+</section>
+<section class="trajectory" aria-label="Magnetization and energy versus Monte Carlo sweeps">
+<div class="trajectory-heading"><div><p class="eyebrow">Monte Carlo observables</p><h3>Magnetization and energy versus MC sweeps</h3></div></div>
+<div class="trace-plots">
+<figure><figcaption>Magnetization <i>m</i></figcaption><canvas id="trace" role="img" aria-label="Instantaneous magnetization versus Monte Carlo sweeps."></canvas></figure>
+<figure><figcaption>Energy <i>E</i> / NJ</figcaption><canvas id="energyTrace" role="img" aria-label="Instantaneous energy per spin versus Monte Carlo sweeps."></canvas></figure>
+</div>
+</section>
+
+<section class="understand" aria-label="Equilibrium magnetization">
+<div class="section-title"><h2>Equilibrium magnetization</h2></div>
+<div class="equilibrium-grid">
+<article class="chart-block"><div class="chart-heading"><h3>Spontaneous magnetization ±m₀(T)</h3><span class="data-tag" id="orderReference">Infinite hexagonal Bravais lattice · Exact zero-field result</span></div>
+<canvas id="orderPlot" class="plot" role="img" aria-label="Exact positive and negative spontaneous magnetization branches approaching zero continuously at the critical temperature."></canvas>
+<div class="curve-tools"><button id="criticalZoom" aria-pressed="false">Zoom near T<sub>c</sub></button><label><input type="checkbox" id="showLiveM">Show instantaneous lattice m</label></div><p id="orderCaption"></p>
+</article>
+<article class="chart-block"><div class="chart-heading"><h3>Magnetization Distribution</h3><span class="data-tag gold" id="distributionReference">4 × 4 · Hexagonal Bravais · Exact ensemble</span></div><canvas id="distribution" class="plot" role="img" aria-label="Exact magnetization distribution for sixteen spins."></canvas><p id="distributionCaption"></p></article>
+</div>
+</section>
+<footer><span>Metropolis Monte Carlo · <a href="https://github.com/Madokafriends/MonteCarlo-simulation-for-2d-hexagonal-lattice" target="_blank" rel="noreferrer">Source code on GitHub</a></span><a href="#top">Back to simulation ↑</a></footer>
+</main></body></html>
