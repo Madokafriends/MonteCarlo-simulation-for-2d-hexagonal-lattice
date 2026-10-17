@@ -1,142 +1,81 @@
+"""Six-neighbor hexagonal Bravais Ising lattice. Historical HexLattice API retained.
+
+J = k_B = 1. One sweep is N random single-site proposals, not physical time.
+"""
+import math
+from pathlib import Path
 import numpy as np
-import random
-import os
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from abc import ABC, abstractmethod
 from Particle import Particle
-from collections import deque
 
 
-class Lattice(ABC):
-    def __init__(self, L, T):
+class HexLattice:
+    def __init__(self, L, T, seed=None):
+        if not isinstance(L, (int, np.integer)) or L < 4 or L % 2:
+            raise ValueError('Use an even integer L >= 4 for the offset-row torus')
+        if not math.isfinite(T) or T < 0:
+            raise ValueError('Temperature must be finite and nonnegative')
+        self.L, self.T = int(L), float(T)
+        self.rng = np.random.default_rng(seed)
+        self.lattice = np.array([[Particle(int(s)) for s in row]
+                                 for row in self.rng.choice([-1, 1], (L, L))])
 
-        self.L = L  # Lattice size
-        self.T = T  # temperature
-        self.lattice = self.initialize_lattice()
-
-    def initialize_lattice(self):
-        # initialize_lattice with random spin of +1 or -1
-        return np.array([[Particle(random.choice([1, -1])) for _ in range(self.L)] 
-                         for _ in range(self.L)])
-
-    @abstractmethod
     def get_neighbors(self, i, j):
-        # return the neighbor, realized by subclass
-        pass
-    
-    @abstractmethod
-    def set_position(self):
-        # return the visualize position, realized by subclass
-        pass
-    
-    # return n-close neighbors
+        L, d = self.L, (1 if i % 2 else -1)
+        return [(i, (j-1) % L), (i, (j+1) % L),
+                ((i-1) % L, j), ((i-1) % L, (j+d) % L),
+                ((i+1) % L, j), ((i+1) % L, (j+d) % L)]
+
     def get_n_neighbors(self, i, j, n):
-        
-        queue = deque([(i, j, 0)])  # use quene to save the points
-        visited = set([(i, j)])     # record those saved points
-        neighbors = []              # store the message of neighbors
-        while queue:
-            x, y, d = queue.popleft()
-            if d == n:
-                neighbors.append((x, y))  # n would be the final close point
-            elif d < n:
-                # continue to search if smaller than n
-                for nx, ny in self.get_neighbors(x, y):
-                    if (nx, ny) not in visited:
-                        visited.add((nx, ny))
-                        queue.append((nx, ny, d + 1))
-        
-        return neighbors
+        if n < 0: raise ValueError('n must be nonnegative')
+        seen, frontier = {(i, j)}, {(i, j)}
+        for _ in range(n):
+            frontier = {q for p in frontier for q in self.get_neighbors(*p)} - seen
+            seen.update(frontier)
+        return sorted(frontier)
 
     def delta_energy(self, i, j):
-        # calculate for the delta_energy change for spin
-        particle = self.lattice[i, j]
-        neighbors = self.get_neighbors(i, j)
-        neighbor_spins = sum(self.lattice[n].spin for n in neighbors)
-        return 2 * particle.spin * neighbor_spins
+        return 2*self.lattice[i,j].spin*sum(self.lattice[p].spin for p in self.get_neighbors(i,j))
 
     def calc_total_magnetization(self):
-        """calculate total magnetization"""
-        total = 0
-        for i in range(self.L):
-            for j in range(self.L):
-                total += self.lattice[i, j].spin
-        return abs(total)  # 
+        """Signed extensive M; use abs explicitly for the order parameter."""
+        return sum(p.spin for p in self.lattice.flat)
 
     def calc_total_energy(self):
-        """calculate total lattice energy, 0.5 means the symmetry that the interaction energy has been calculate for twice times"""
-        E = 0
-        for i in range(self.L):
-            for j in range(self.L):
-                spin = self.lattice[i, j].spin
-                # interaction energy with local energy
-                for neighbor in self.get_neighbors(i, j):
-                    E -= 0.5 * spin * self.lattice[neighbor].spin
-        return E  # total energy
+        return -.5*sum(self.lattice[i,j].spin*self.lattice[q].spin
+                       for i in range(self.L) for j in range(self.L)
+                       for q in self.get_neighbors(i,j))
 
+    def attempt_flip(self, i, j, draw=None):
+        dE = self.delta_energy(i,j)
+        p = 1.0 if dE <= 0 else (math.exp(-dE/self.T) if self.T else 0.0)
+        u = self.rng.random() if draw is None else float(draw)
+        if not 0 <= u < 1: raise ValueError('Draw must be in [0, 1)')
+        accepted = u < p
+        if accepted: self.lattice[i,j].flip()
+        return dict(delta_energy=dE, probability=p, draw=u, accepted=accepted)
 
     def monte_carlo_step(self):
-        # one montecarlo step
-        for i in range (self.L):
-            for j in range(self.L):
-                dE = self.delta_energy(i, j)
-                if dE < 0 or random.random() < np.exp(-dE / self.T):
-                    self.lattice[i, j].flip()
+        for i,j in self.rng.integers(self.L, size=(self.L*self.L,2)):
+            self.attempt_flip(int(i),int(j))
 
-    @abstractmethod
-    def generate_image(self, frame, folder):
-        pass
-    
-    
-# HexLattice case
-class HexLattice(Lattice):
-    def get_neighbors(self, i, j):
-        # neighbors of the closest, with peroidly boundary conditions
-        neighbors = []
-        if i % 2 == 0:  # even
-            neighbors = [
-                ((i-1) % self.L, j), ((i+1) % self.L, j),
-                (i, (j-1) % self.L), (i, (j+1) % self.L),
-                ((i-1) % self.L, (j-1) % self.L), ((i-1) % self.L, (j+1) % self.L)
-            ]
-        else:  # odd
+    def set_position(self, transform_factor=.5):
+        rows,cols = np.indices((self.L,self.L))
+        return ((cols+transform_factor*(rows%2)).ravel(),
+                (rows*math.sqrt(3)/2).ravel(),
+                np.array([p.spin for p in self.lattice.flat]))
 
-            neighbors = [
-                ((i-1) % self.L, j), ((i+1) % self.L, j),
-                (i, (j-1) % self.L), (i, (j+1) % self.L),
-                ((i+1) % self.L, (j-1) % self.L), ((i+1) % self.L, (j+1) % self.L)
-            ]
-        return neighbors
-
-    def set_position(self, transform_factor=0.5):
-        x_area = np.zeros(self.L**2)
-        y_area = np.zeros(self.L**2)
-        color=np.zeros(self.L**2)
-        for i in range(self.L):
-            for j in range(self.L):
-                index = i * self.L + j
-                x_area[index] = j + transform_factor * (i % 2)
-                y_area[index] = i
-                if self.lattice[i][j].spin==1:
-                    color[index]=1
-                else:
-                    color[index]=-1
-        return (x_area, y_area,color)
-
-    def generate_image(self, frame, folder,x_area,y_area,colors,diameter=50):
-        # generate the visualize results
-        if np.sum(colors)>=0:
-            colors_s = ['black' if spin == -1 else 'white'
-                  for spin in colors]
-        else:
-            colors_s = ['black' if spin == 1 else 'white'
-                  for spin in colors]
-        
-        fig, ax = plt.subplots(figsize=(12, 12))
-        ax.scatter(x_area, y_area, c=colors_s, s=diameter, marker='o', edgecolors='black')
-        ax.set_title(f'Temperature: {self.T}, Frame: {frame}')
-        ax.set_axis_off()
-        plt.savefig(os.path.join(folder, f"T_{self.T}_frame_{frame}.png"))
+    def generate_image(self, frame, folder, x_area=None, y_area=None, colors=None, diameter=50):
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        x,y,spins = self.set_position()
+        fig,ax = plt.subplots(figsize=(8,7),facecolor='#111722')
+        ax.set_facecolor('#111722')
+        ax.scatter(x,y,c=np.where(spins>0,'#58c4dd','#e7a26d'),s=diameter)
+        ax.set_aspect('equal'); ax.set_axis_off()
+        ax.set_title('T = %.2f | sweep %s' % (self.T,frame),color='#e4edf2')
+        Path(folder).mkdir(parents=True,exist_ok=True)
+        path = Path(folder)/('T_%s_frame_%s.png' % (self.T,frame))
+        fig.savefig(path,dpi=150,bbox_inches='tight',facecolor=fig.get_facecolor())
         plt.close(fig)
+        return path
