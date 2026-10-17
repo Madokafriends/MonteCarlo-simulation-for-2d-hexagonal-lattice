@@ -1,0 +1,68 @@
+name: Tests and demo
+
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  javascript:
+    name: JavaScript numerical checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Check JavaScript syntax
+        run: for file in demo/*.js; do node --check "$file"; done
+      - name: Run numerical and rendering tests
+        run: node --test tests/*.test.cjs
+
+  python:
+    name: Python numerical checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install numerical dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run Python tests
+        run: python -B -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Exercise the sampling command
+        run: python -B main.py --size 4 --temperatures 2.5 4.0 --burn-in 10 --samples 10 --spacing 2 --seed 42
+
+  deploy:
+    name: Publish interactive demo
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [javascript, python]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: demo
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
